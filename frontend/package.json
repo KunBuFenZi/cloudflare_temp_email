@@ -10,7 +10,7 @@
     "build:pages": "vite build -m pages --emptyOutDir",
     "preview": "vite preview",
     "deploy:preview": "npm run build && wrangler pages deploy ./dist --branch preview",
-    "deploy": "npm run build && wrangler pages deploy ./dist --branch production"
+    "deploy": "npm run build && wrangler pages deploy ./dist --branch main"
   },
   "dependencies": {
     "@vicons/material": "^0.12.0",
