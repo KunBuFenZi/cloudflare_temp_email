@@ -1,4 +1,41 @@
+<!-- markdownlint-disable-file MD004 MD024 MD034 MD036 -->
 # CHANGE LOG
+
+## main branch
+
+- 修复 smtp imap proxy sever 的一些 bug
+
+## v0.5.1
+
+- 添加 `mail-parser-wasm-worker` 用于 worker 解析邮件, [文档](https://temp-mail-docs.awsl.uk/zh/guide/feature/mail_parser_wasm_worker.html)
+- 添加校验用户邮箱长度配置 `MIN_ADDRESS_LEN` 和 `MAX_ADDRESS_LEN`
+- 修复 `pages function` 未转发 `telegram` api 问题
+
+## v0.5.0
+
+- UI: 增加本地缓存进行地址管理
+- worker: 增加 `FORWARD_ADDRESS_LIST` 全局邮件转发地址(等同于 `catch all`)
+- UI: 多语言使用路由进行切换
+- 添加保存附件到 S3 的功能
+- UI: 增加收取邮件列表 `批量删除` 和 `批量下载`
+
+## v0.4.6
+
+- worker 配置文件添加 `TITLE = "Custom Title"`, 可自定义网站标题
+- 修复 KV 未绑定无法删除地址的问题
+
+## v0.4.5
+
+- UI lazy load 懒加载
+- telegram bot 添加用户全局推送功能(admin 用户)
+- 增加对 cloudflare verified 用户发送邮件
+- 增加使用 `resend` 发送邮件, `resend` 提供 http 和 smtp api, 使用更加方便, 文档: https://temp-mail-docs.awsl.uk/zh/guide/config-send-mail.html
+
+## v0.4.4
+
+- 增加 telegram mini app
+- telegram bot 增加 `ubind`, `delete` 指令
+- 修复 webhook 多行文本的问题
 
 ## v0.4.3
 
@@ -14,7 +51,6 @@
 - UI: 登录后可直接主页切换地址
 - UI: 发件箱也采用左右分栏显示(类似收件箱)
 - `SMTP IMAP Proxy` 添加发件箱查看
-
 
 * feat: telegram bot TelegramSettings && webhook by @dreamhunter2333 in https://github.com/dreamhunter2333/cloudflare_temp_email/pull/244
 * fix build by @dreamhunter2333 in https://github.com/dreamhunter2333/cloudflare_temp_email/pull/245
@@ -196,7 +232,6 @@ set
 - 添加 RATE_LIMITER 限流 发送邮件 和 新建地址
 - 一些 bug 修复
 
----
 - feat: allow user delete mail && notify when send access changed by @dreamhunter2333 in https://github.com/dreamhunter2333/cloudflare_temp_email/pull/132
 - feat: requset_send_mail_access default 1 balance by @dreamhunter2333 in https://github.com/dreamhunter2333/cloudflare_temp_email/pull/143
 - fix: RATE_LIMITER not call jwt by @dreamhunter2333 in https://github.com/dreamhunter2333/cloudflare_temp_email/pull/146

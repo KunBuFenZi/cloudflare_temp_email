@@ -54,7 +54,10 @@ const getOpenSettings = async (message) => {
     try {
         const res = await api.fetch("/open_api/settings");
         Object.assign(openSettings.value, {
+            title: res["title"] || "",
             prefix: res["prefix"] || "",
+            minAddressLen: res["minAddressLen"] || 1,
+            maxAddressLen: res["maxAddressLen"] || 30,
             needAuth: res["needAuth"] || false,
             domains: res["domains"].map((domain) => {
                 return {
@@ -70,6 +73,7 @@ const getOpenSettings = async (message) => {
             copyright: res["copyright"] || openSettings.value.copyright,
             cfTurnstileSiteKey: res["cfTurnstileSiteKey"] || "",
             enableWebhook: res["enableWebhook"] || false,
+            isS3Enabled: res["isS3Enabled"] || false,
         });
         if (openSettings.value.needAuth) {
             showAuth.value = true;

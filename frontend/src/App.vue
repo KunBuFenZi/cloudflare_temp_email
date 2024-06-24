@@ -8,16 +8,15 @@ import Header from './views/Header.vue';
 import Footer from './views/Footer.vue';
 
 
-const { localeCache, isDark, loading, useSideMargin } = useGlobalState()
+const {
+  isDark, loading, useSideMargin, telegramApp, isTelegram
+} = useGlobalState()
+const { locale } = useI18n({});
 const theme = computed(() => isDark.value ? darkTheme : null)
-const localeConfig = computed(() => localeCache.value == 'zh' ? zhCN : null)
+const localeConfig = computed(() => locale.value == 'zh' ? zhCN : null)
 const isMobile = useIsMobile()
 const showSideMargin = computed(() => !isMobile.value && useSideMargin.value);
 
-const { locale } = useI18n({
-  useScope: 'global',
-});
-locale.value = localeCache.value;
 
 onMounted(async () => {
   const token = import.meta.env.VITE_CF_WEB_ANALY_TOKEN;
@@ -31,6 +30,23 @@ onMounted(async () => {
     document.body.appendChild(script);
   }
 
+  // check if telegram is enabled
+  const enableTelegram = import.meta.env.VITE_IS_TELEGRAM;
+  if (
+    (typeof enableTelegram === 'boolean' && enableTelegram === true)
+    ||
+    (typeof enableTelegram === 'string' && enableTelegram === 'true')
+  ) {
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://telegram.org/js/telegram-web-app.js';
+      script.onload = resolve;
+      script.onerror = reject;
+      document.body.appendChild(script);
+    });
+    telegramApp.value = window.Telegram?.WebApp || {};
+    isTelegram.value = !!window.Telegram?.WebApp?.initData;
+  }
 });
 </script>
 

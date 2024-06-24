@@ -1,7 +1,8 @@
 import { Context } from "hono";
 
+import { getEnvStringList } from "../utils";
 import { sendMailToTelegram } from "../telegram_api";
-import { Bindings } from "../types";
+import { Bindings, HonoCustomType } from "../types";
 import { auto_reply } from "./auto_reply";
 import { trigerWebhook } from "../mails_api/webhook_settings";
 
@@ -25,11 +26,21 @@ async function email(message: ForwardableEmailMessage, env: Bindings, ctx: Execu
         console.log(`Failed save message from ${message.from} to ${message.to}`);
     }
 
+    // forward email
+    try {
+        const forwardAddressList = getEnvStringList(env.FORWARD_ADDRESS_LIST)
+        for (const forwardAddress of forwardAddressList) {
+            await message.forward(forwardAddress);
+        }
+    } catch (error) {
+        console.log("forward email error", error);
+    }
+
     // send email to telegram
     try {
         await sendMailToTelegram(
-            { env: env } as Context<{ Bindings: Bindings }>,
-            message.to, rawEmail);
+            { env: env } as Context<HonoCustomType>,
+            message.to, rawEmail, message_id);
     } catch (error) {
         console.log("send mail to telegram error", error);
     }
@@ -37,7 +48,7 @@ async function email(message: ForwardableEmailMessage, env: Bindings, ctx: Execu
     // send webhook
     try {
         await trigerWebhook(
-            { env: env } as Context<{ Bindings: Bindings }>,
+            { env: env } as Context<HonoCustomType>,
             message.to, rawEmail
         );
     } catch (error) {

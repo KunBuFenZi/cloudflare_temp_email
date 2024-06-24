@@ -7,6 +7,7 @@ export const useGlobalState = createGlobalState(
         const toggleDark = useToggle(isDark)
         const loading = ref(false);
         const openSettings = ref({
+            title: '',
             prefix: '',
             needAuth: false,
             adminContact: '',
@@ -17,6 +18,8 @@ export const useGlobalState = createGlobalState(
             domains: [],
             copyright: 'Dream Hunter',
             cfTurnstileSiteKey: '',
+            enableWebhook: false,
+            isS3Enabled: false,
         })
         const settings = ref({
             fetched: false,
@@ -44,7 +47,6 @@ export const useGlobalState = createGlobalState(
         const auth = useStorage('auth', '');
         const adminAuth = useStorage('adminAuth', '');
         const jwt = useStorage('jwt', '');
-        const localeCache = useStorage('locale', 'zh');
         const adminTab = ref("account");
         const adminMailTabAddress = ref("");
         const adminSendBoxTabAddress = ref("");
@@ -68,6 +70,8 @@ export const useGlobalState = createGlobalState(
             /** @type {number} */
             user_id: 0,
         });
+        const telegramApp = ref(window.Telegram?.WebApp || {});
+        const isTelegram = ref(!!window.Telegram?.WebApp?.initData);
         return {
             isDark,
             toggleDark,
@@ -79,7 +83,6 @@ export const useGlobalState = createGlobalState(
             showAddressCredential,
             auth,
             jwt,
-            localeCache,
             adminAuth,
             showAdminAuth,
             adminTab,
@@ -95,6 +98,8 @@ export const useGlobalState = createGlobalState(
             userSettings,
             globalTabplacement,
             useSideMargin,
+            telegramApp,
+            isTelegram,
         }
     },
 )

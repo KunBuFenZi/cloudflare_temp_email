@@ -9,11 +9,35 @@ import Turnstile from '../../components/Turnstile.vue'
 
 import { useGlobalState } from '../../store'
 import { api } from '../../api'
+import { getRouterPathWithLang } from '../../utils'
+
+const props = defineProps({
+    bindUserAddress: {
+        type: Function,
+        default: async () => { await api.bindUserAddress(); },
+        requried: true
+    },
+    newAddressPath: {
+        type: Function,
+        default: async (address_name, domain, cf_token) => {
+            return await api.fetch("/api/new_address", {
+                method: "POST",
+                body: JSON.stringify({
+                    name: address_name,
+                    domain: domain,
+                    cf_token: cf_token,
+                }),
+            });
+        },
+        requried: true
+    },
+})
+
 const message = useMessage()
 const router = useRouter()
 
 const {
-    jwt, localeCache, loading, openSettings,
+    jwt, loading, openSettings,
     showAddressCredential, userSettings
 } = useGlobalState()
 
@@ -32,18 +56,17 @@ const login = async () => {
         jwt.value = credential.value;
         await api.getSettings();
         try {
-            await api.bindUserAddress();
+            await props.bindUserAddress();
         } catch (error) {
             message.error(`${t('bindUserAddressError')}: ${error.message}`);
         }
-        await router.push("/");
+        await router.push(getRouterPathWithLang("/", locale.value));
     } catch (error) {
         message.error(error.message || "error");
     }
 }
 
-const { t } = useI18n({
-    locale: localeCache.value || 'zh',
+const { locale, t } = useI18n({
     messages: {
         en: {
             login: 'Login',
@@ -98,20 +121,17 @@ const generateName = async () => {
 
 const newEmail = async () => {
     try {
-        const res = await api.fetch(`/api/new_address`, {
-            method: "POST",
-            body: JSON.stringify({
-                name: emailName.value,
-                domain: emailDomain.value,
-                cf_token: cfToken.value,
-            }),
-        });
+        const res = await props.newAddressPath(
+            emailName.value,
+            emailDomain.value,
+            cfToken.value
+        );
         jwt.value = res["jwt"];
         await api.getSettings();
-        await router.push("/");
+        await router.push(getRouterPathWithLang("/", locale.value));
         showAddressCredential.value = true;
         try {
-            await api.bindUserAddress();
+            await props.bindUserAddress();
         } catch (error) {
             message.error(`${t('bindUserAddressError')}: ${error.message}`);
         }
@@ -169,7 +189,8 @@ onMounted(async () => {
                             <n-input-group-label v-if="openSettings.prefix">
                                 {{ openSettings.prefix }}
                             </n-input-group-label>
-                            <n-input v-model:value="emailName" />
+                            <n-input v-model:value="emailName" show-count :minlength="openSettings.minAddressLen"
+                                :maxlength="openSettings.maxAddressLen" />
                             <n-input-group-label>@</n-input-group-label>
                             <n-select v-model:value="emailDomain" :consistent-menu-width="false"
                                 :options="openSettings.domains" />

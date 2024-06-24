@@ -1,10 +1,9 @@
 import { Context } from "hono";
-import { Bindings, Variables } from "../types";
+import { HonoCustomType } from "../types";
 import { CONSTANTS } from "../constants";
-import { AdminWebhookSettings, WebhookMail } from "../models/models";
-// @ts-ignore
+import { AdminWebhookSettings, WebhookMail } from "../models";
 import { getBooleanValue } from "../utils";
-import PostalMime from 'postal-mime';
+import { commonParseMail } from "../common";
 
 
 class WebhookSettings {
@@ -16,17 +15,15 @@ class WebhookSettings {
     body: string = JSON.stringify({
         "from": "${from}",
         "to": "${to}",
-        "headers": "${headers}",
         "subject": "${subject}",
         "raw": "${raw}",
         "parsedText": "${parsedText}",
+        "parsedHtml": "${parsedHtml}",
     }, null, 2)
 }
 
 
-async function getWebhookSettings(
-    c: Context<{ Bindings: Bindings, Variables: Variables }>
-): Promise<Response> {
+async function getWebhookSettings(c: Context<HonoCustomType>): Promise<Response> {
     if (!c.env.KV) {
         return c.text("KV is not available", 400);
     }
@@ -45,9 +42,7 @@ async function getWebhookSettings(
 }
 
 
-async function saveWebhookSettings(
-    c: Context<{ Bindings: Bindings, Variables: Variables }>
-): Promise<Response> {
+async function saveWebhookSettings(c: Context<HonoCustomType>): Promise<Response> {
     const { address } = c.get("jwtPayload")
     const adminSettings = await c.env.KV.get<AdminWebhookSettings>(CONSTANTS.WEBHOOK_KV_SETTINGS_KEY, "json");
     if (!adminSettings?.allowList.includes(address)) {
@@ -64,7 +59,14 @@ async function sendWebhook(settings: WebhookSettings, formatMap: WebhookMail): P
     // send webhook
     let body = settings.body;
     for (const key of Object.keys(formatMap)) {
-        body = body.replace(new RegExp(`\\$\\{${key}\\}`, "g"), formatMap[key as keyof WebhookMail]);
+        /* eslint-disable no-useless-escape */
+        body = body.replace(
+            new RegExp(`\\$\\{${key}\\}`, "g"),
+            JSON.stringify(
+                formatMap[key as keyof WebhookMail]
+            ).replace(/^"(.*)"$/, '\$1')
+        );
+        /* eslint-enable no-useless-escape */
     }
     const response = await fetch(settings.url, {
         method: settings.method,
@@ -79,7 +81,7 @@ async function sendWebhook(settings: WebhookSettings, formatMap: WebhookMail): P
 }
 
 export async function trigerWebhook(
-    c: Context<{ Bindings: Bindings }>,
+    c: Context<HonoCustomType>,
     address: string,
     raw_mail: string
 ): Promise<void> {
@@ -96,31 +98,36 @@ export async function trigerWebhook(
     if (!settings) {
         return;
     }
-    const parsedEmail = await PostalMime.parse(raw_mail);
+    const parsedEmail = await commonParseMail(raw_mail);
     const res = await sendWebhook(settings, {
-        from: parsedEmail.from.address || "",
+        from: parsedEmail?.sender || "",
         to: address,
-        headers: JSON.stringify(parsedEmail.headers, null, 2),
-        subject: parsedEmail.subject || "",
+        subject: parsedEmail?.subject || "",
         raw: raw_mail,
-        parsedText: parsedEmail.text || parsedEmail.html || ""
+        parsedText: parsedEmail?.text || "",
+        parsedHtml: parsedEmail?.html || ""
     });
     if (!res.success) {
         console.log(res.message);
     }
 }
 
-async function testWebhookSettings(
-    c: Context<{ Bindings: Bindings, Variables: Variables }>
-): Promise<Response> {
+async function testWebhookSettings(c: Context<HonoCustomType>): Promise<Response> {
     const settings = await c.req.json<WebhookSettings>();
+    const { address } = c.get("jwtPayload");
+    // random raw email
+    const raw = await c.env.DB.prepare(
+        `SELECT raw FROM raw_mails WHERE address = ? ORDER BY RANDOM() LIMIT 1`
+    ).bind(address).first<string>("raw");
+
+    const parsedEmail = await commonParseMail(raw);
     const res = await sendWebhook(settings, {
-        from: "from@test.com",
-        to: "to@test.com",
-        headers: "headers",
-        subject: "test",
-        raw: "test",
-        parsedText: "test"
+        from: parsedEmail?.sender || "test@test.com",
+        to: address,
+        subject: parsedEmail?.subject || "test subject",
+        raw: raw || "test raw email",
+        parsedText: parsedEmail?.text || "test parsed text",
+        parsedHtml: parsedEmail?.html || "test parsed html"
     });
     if (!res.success) {
         return c.text(res.message || "send webhook error", 400);

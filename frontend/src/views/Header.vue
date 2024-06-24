@@ -1,6 +1,7 @@
 <script setup>
 import { ref, h, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useHead } from '@unhead/vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useIsMobile } from '../utils/composables'
 import {
@@ -11,11 +12,13 @@ import { GithubAlt, Language, User, Home } from '@vicons/fa'
 
 import { useGlobalState } from '../store'
 import { api } from '../api'
+import { getRouterPathWithLang } from '../utils'
+
 const message = useMessage()
 
 const {
-    localeCache, toggleDark, isDark, openSettings,
-    showAuth, adminAuth, auth, loading
+    toggleDark, isDark, isTelegram,
+    showAuth, adminAuth, auth, loading, openSettings
 } = useGlobalState()
 const route = useRoute()
 const router = useRouter()
@@ -36,13 +39,15 @@ const authFunc = async () => {
     }
 }
 
-const changeLocale = (locale) => {
-    localeCache.value = locale;
-    location.reload()
+const changeLocale = async (lang) => {
+    if (lang == 'zh') {
+        await router.push(route.fullPath.replace('/en', ''));
+    } else {
+        await router.push(`/${lang}${route.fullPath}`);
+    }
 }
 
-const { t } = useI18n({
-    locale: localeCache.value || 'zh',
+const { locale, t } = useI18n({
     messages: {
         en: {
             title: 'Cloudflare Temp Email',
@@ -79,7 +84,10 @@ const menuOptions = computed(() => [
                 size: "small",
                 type: menuValue.value == "home" ? "primary" : "default",
                 style: "width: 100%",
-                onClick: async () => { await router.push('/'); showMobileMenu.value = false; }
+                onClick: async () => {
+                    await router.push(getRouterPathWithLang('/', locale.value));
+                    showMobileMenu.value = false;
+                }
             },
             {
                 default: () => t('home'),
@@ -95,7 +103,10 @@ const menuOptions = computed(() => [
                 size: "small",
                 type: menuValue.value == "user" ? "primary" : "default",
                 style: "width: 100%",
-                onClick: async () => { await router.push("/user"); showMobileMenu.value = false; }
+                onClick: async () => {
+                    await router.push(getRouterPathWithLang("/user", locale.value));
+                    showMobileMenu.value = false;
+                }
             },
             {
                 default: () => t('user'),
@@ -103,6 +114,7 @@ const menuOptions = computed(() => [
             }
         ),
         key: "user",
+        show: !isTelegram.value
     },
     {
         label: () => h(
@@ -112,7 +124,10 @@ const menuOptions = computed(() => [
                 size: "small",
                 type: menuValue.value == "admin" ? "primary" : "default",
                 style: "width: 100%",
-                onClick: async () => { await router.push('/admin'); showMobileMenu.value = false; }
+                onClick: async () => {
+                    await router.push(getRouterPathWithLang('/admin', locale.value));
+                    showMobileMenu.value = false;
+                }
             },
             {
                 default: () => "Admin",
@@ -147,13 +162,13 @@ const menuOptions = computed(() => [
                 text: true,
                 size: "small",
                 style: "width: 100%",
-                onClick: () => {
-                    localeCache.value == 'zh' ? changeLocale('en') : changeLocale('zh');
+                onClick: async () => {
+                    locale.value == 'zh' ? await changeLocale('en') : await changeLocale('zh');
                     showMobileMenu.value = false;
                 }
             },
             {
-                default: () => localeCache.value == 'zh' ? "English" : "中文",
+                default: () => locale.value == 'zh' ? "English" : "中文",
                 icon: () => h(
                     NIcon, { component: Language }
                 )
@@ -181,6 +196,13 @@ const menuOptions = computed(() => [
     }
 ]);
 
+useHead({
+    title: () => openSettings.value.title || t('title'),
+    meta: [
+        { name: "description", content: openSettings.value.description || t('title') },
+    ]
+});
+
 onMounted(async () => {
     await api.getOpenSettings(message);
 });
@@ -190,7 +212,7 @@ onMounted(async () => {
     <div>
         <n-page-header>
             <template #title>
-                <h3>{{ t('title') }}</h3>
+                <h3>{{ openSettings.title || t('title') }}</h3>
             </template>
             <template #avatar>
                 <n-avatar style="margin-left: 10px;" src="/logo.png" />

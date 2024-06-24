@@ -1,11 +1,11 @@
 import { Hono } from 'hono'
 
-// @ts-ignore
-import { getDomains, getPasswords, getBooleanValue } from './utils';
+import { getDomains, getPasswords, getBooleanValue, getIntValue } from './utils';
 import { CONSTANTS } from './constants';
-import { Bindings } from './types';
+import { HonoCustomType } from './types';
+import { isS3Enabled } from './mails_api/s3_attachment';
 
-const api = new Hono<{ Bindings: Bindings }>
+const api = new Hono<HonoCustomType>
 
 api.get('/open_api/settings', async (c) => {
     // check header x-custom-auth
@@ -13,10 +13,13 @@ api.get('/open_api/settings', async (c) => {
     const passwords = getPasswords(c);
     if (passwords && passwords.length > 0) {
         const auth = c.req.raw.headers.get("x-custom-auth");
-        needAuth = !passwords.includes(auth);
+        needAuth = !auth || !passwords.includes(auth);
     }
     return c.json({
+        "title": c.env.TITLE,
         "prefix": c.env.PREFIX,
+        "minAddressLen": getIntValue(c.env.MIN_ADDRESS_LEN, 1),
+        "maxAddressLen": getIntValue(c.env.MAX_ADDRESS_LEN, 30),
         "domains": getDomains(c),
         "needAuth": needAuth,
         "adminContact": c.env.ADMIN_CONTACT,
@@ -27,6 +30,7 @@ api.get('/open_api/settings', async (c) => {
         "copyright": c.env.COPYRIGHT,
         "cfTurnstileSiteKey": c.env.CF_TURNSTILE_SITE_KEY,
         "enableWebhook": getBooleanValue(c.env.ENABLE_WEBHOOK),
+        "isS3Enabled": isS3Enabled(c),
         "version": CONSTANTS.VERSION,
     });
 })

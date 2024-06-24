@@ -2,11 +2,12 @@ import { Hono } from 'hono'
 import { ServerResponse } from 'node:http'
 import { Writable } from 'node:stream'
 
-import { Bindings } from '../types'
+import { HonoCustomType } from '../types'
 import { newTelegramBot, initTelegramBotCommands, sendMailToTelegram } from './telegram'
 import settings from './settings'
+import miniapp from './miniapp'
 
-export const api = new Hono<{ Bindings: Bindings }>();
+export const api = new Hono<HonoCustomType>();
 export { sendMailToTelegram }
 
 api.use("/telegram/*", async (c, next) => {
@@ -67,3 +68,8 @@ api.get("/admin/telegram/status", async (c) => {
 
 api.get("/admin/telegram/settings", settings.getTelegramSettings);
 api.post("/admin/telegram/settings", settings.saveTelegramSettings);
+api.post("/telegram/get_bind_address", miniapp.getTelegramBindAddress);
+api.post("/telegram/new_address", miniapp.newTelegramAddress);
+api.post("/telegram/bind_address", miniapp.bindAddress);
+api.post("/telegram/unbind_address", miniapp.unbindAddress);
+api.post("/telegram/get_mail", miniapp.getMail);

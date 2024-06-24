@@ -4,27 +4,21 @@ import { jwt } from 'hono/jwt'
 import { Jwt } from 'hono/utils/jwt'
 
 // @ts-ignore
-import { api as commonApi } from './commom_api';
-// @ts-ignore
-import { api as mailsApi } from './mails_api'
-// @ts-ignore
-import { api as userApi } from './user_api';
-// @ts-ignore
-import { api as adminApi } from './admin_api';
-// @ts-ignore
 import { api as apiV1 } from './deprecated';
-// @ts-ignore
+
+import { api as commonApi } from './commom_api';
+import { api as mailsApi } from './mails_api'
+import { api as userApi } from './user_api';
+import { api as adminApi } from './admin_api';
 import { api as apiSendMail } from './mails_api/send_mail_api'
 import { api as telegramApi } from './telegram_api'
 
 import { email } from './email';
-// @ts-ignore
 import { scheduled } from './scheduled';
-// @ts-ignore
 import { getAdminPasswords, getPasswords, getBooleanValue } from './utils';
-import { Bindings } from './types';
+import { HonoCustomType } from './types';
 
-const app = new Hono<{ Bindings: Bindings }>()
+const app = new Hono<HonoCustomType>()
 //cors
 app.use('/*', cors());
 // rate limit
@@ -88,6 +82,7 @@ app.use('/user_api/*', async (c, next) => {
 	}
 	try {
 		const token = c.req.raw.headers.get("x-user-token");
+		if (!token) return c.text("Need User Token", 401)
 		const payload = await Jwt.verify(token, c.env.JWT_SECRET, "HS256");
 		// check expired
 		if (!payload.exp) return c.text("Invalid Token", 401);
@@ -130,8 +125,14 @@ app.route('/', apiV1)
 app.route('/', apiSendMail)
 app.route('/', telegramApi)
 
-app.get('/', async c => c.text("OK"))
-app.get('/health_check', async c => c.text("OK"))
+app.get('/', async c => {
+	if (!c.env.DB) { return c.text("DB is not available", 400); }
+	return c.text("OK");
+})
+app.get('/health_check', async c => {
+	if (!c.env.DB) { return c.text("DB is not available", 400); }
+	return c.text("OK");
+})
 app.all('/*', async c => c.text("Not Found", 404))
 
 

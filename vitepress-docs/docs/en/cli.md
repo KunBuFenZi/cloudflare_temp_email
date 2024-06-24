@@ -68,8 +68,17 @@ node_compat = true
 # [triggers]
 # crons = [ "0 0 * * *" ]
 
+# send mail by cf mail
+# send_email = [
+#    { name = "SEND_MAIL" },
+# ]
+
 [vars]
+# TITLE = "Custom Title" # The title of the site
 PREFIX = "tmp" # The mailbox name prefix to be processed
+# (min, max) length of the adderss, if not set, the default is (1, 30)
+# MIN_ADDRESS_LEN = 1
+# MAX_ADDRESS_LEN = 30
 # If you want your site to be private, uncomment below and change your password
 # PASSWORDS = ["123", "456"]
 # admin console password, if not configured, access to the console is not allowed
@@ -99,6 +108,8 @@ ENABLE_AUTO_REPLY = false
 # DKIM_PRIVATE_KEY = "" # Refer to the contents of priv_key.txt in the DKIM section
 # telegram bot
 # TG_MAX_ACCOUNTS = 5
+# global forward address list, if set, all emails will be forwarded to these addresses
+# FORWARD_ADDRESS_LIST = ["xxx@xxx.com"]
 
 [[d1_databases]]
 binding = "DB"

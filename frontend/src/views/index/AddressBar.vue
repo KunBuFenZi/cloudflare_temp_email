@@ -9,19 +9,23 @@ import { useGlobalState } from '../../store'
 import { api } from '../../api'
 import Login from '../common/Login.vue'
 import AddressManagement from '../user/AddressManagement.vue'
+import TelegramAddress from './TelegramAddress.vue'
+import LocalAddress from './LocalAddress.vue'
+import { getRouterPathWithLang } from '../../utils'
 
 const { toClipboard } = useClipboard()
 const message = useMessage()
 const router = useRouter()
 
 const {
-    jwt, localeCache, settings, showAddressCredential, userJwt
+    jwt, settings, showAddressCredential, userJwt,
+    isTelegram
 } = useGlobalState()
 
-const { t } = useI18n({
-    locale: localeCache.value || 'zh',
+const { locale, t } = useI18n({
     messages: {
         en: {
+            addressManage: 'Address Manage',
             changeAddress: 'Change Address',
             ok: 'OK',
             copy: 'Copy',
@@ -32,6 +36,7 @@ const { t } = useI18n({
             userLogin: 'User Login',
         },
         zh: {
+            addressManage: '地址管理',
             changeAddress: '更换地址',
             ok: '确定',
             copy: '复制',
@@ -45,6 +50,8 @@ const { t } = useI18n({
 });
 
 const showChangeAddress = ref(false)
+const showTelegramChangeAddress = ref(false)
+const showLocalAddress = ref(false)
 
 const copy = async () => {
     try {
@@ -53,6 +60,10 @@ const copy = async () => {
     } catch (e) {
         message.error(e.message || "error");
     }
+}
+
+const onUserLogin = async () => {
+    await router.push(getRouterPathWithLang("/user", locale.value))
 }
 
 onMounted(async () => {
@@ -69,15 +80,26 @@ onMounted(async () => {
             <n-alert type="info" :show-icon="false">
                 <span>
                     <b>{{ settings.address }}</b>
-                    <n-button v-if="userJwt" style="margin-left: 10px" @click="showChangeAddress = true" size="small"
-                        tertiary type="primary">
+                    <n-button v-if="isTelegram" style="margin-left: 10px" @click="showTelegramChangeAddress = true"
+                        size="small" tertiary type="primary">
+                        <n-icon :component="ExchangeAlt" /> {{ t('addressManage') }}
+                    </n-button>
+                    <n-button v-else-if="userJwt" style="margin-left: 10px" @click="showChangeAddress = true"
+                        size="small" tertiary type="primary">
                         <n-icon :component="ExchangeAlt" /> {{ t('changeAddress') }}
+                    </n-button>
+                    <n-button v-else style="margin-left: 10px" @click="showLocalAddress = true" size="small" tertiary
+                        type="primary">
+                        <n-icon :component="ExchangeAlt" /> {{ t('addressManage') }}
                     </n-button>
                     <n-button style="margin-left: 10px" @click="copy" size="small" tertiary type="primary">
                         <n-icon :component="Copy" /> {{ t('copy') }}
                     </n-button>
                 </span>
             </n-alert>
+        </div>
+        <div v-else-if="isTelegram">
+            <TelegramAddress />
         </div>
         <div v-else class="center">
             <n-card style="max-width: 600px;">
@@ -86,7 +108,7 @@ onMounted(async () => {
                 </n-alert>
                 <Login />
                 <n-divider />
-                <n-button @click="router.push('/user')" type="primary" block secondary strong>
+                <n-button @click="onUserLogin" type="primary" block secondary strong>
                     <template #icon>
                         <n-icon :component="User" />
                     </template>
@@ -94,8 +116,14 @@ onMounted(async () => {
                 </n-button>
             </n-card>
         </div>
+        <n-modal v-model:show="showTelegramChangeAddress" preset="card" :title="t('changeAddress')">
+            <TelegramAddress />
+        </n-modal>
         <n-modal v-model:show="showChangeAddress" preset="card" :title="t('changeAddress')">
             <AddressManagement />
+        </n-modal>
+        <n-modal v-model:show="showLocalAddress" preset="card" :title="t('changeAddress')">
+            <LocalAddress />
         </n-modal>
         <n-modal v-model:show="showAddressCredential" preset="dialog" :title="t('addressCredential')">
             <span>

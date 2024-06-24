@@ -36,8 +36,17 @@ node_compat = true
 # [triggers]
 # crons = [ "0 0 * * *" ]
 
+# 通过 Cloudflare 发送邮件
+# send_email = [
+#    { name = "SEND_MAIL" },
+# ]
+
 [vars]
+# TITLE = "Custom Title" # 自定义网站标题
 PREFIX = "tmp" # 要处理的邮箱名称前缀，不需要后缀可配置为空字符串
+# (min, max) adderss的长度，如果不设置，默认为(1, 30)
+# MIN_ADDRESS_LEN = 1
+# MAX_ADDRESS_LEN = 30
 # 如果你想要你的网站私有，取消下面的注释，并修改密码
 # PASSWORDS = ["123", "456"]
 # admin 控制台密码, 不配置则不允许访问控制台
@@ -67,6 +76,8 @@ ENABLE_AUTO_REPLY = false
 # DKIM_PRIVATE_KEY = "" # 参考 DKIM 部分 priv_key.txt 的内容
 # telegram bot 最多绑定邮箱数量
 # TG_MAX_ACCOUNTS = 5
+# 全局转发地址列表，如果不配置则不启用，启用后所有邮件都会转发到列表中的地址
+# FORWARD_ADDRESS_LIST = ["xxx@xxx.com"]
 
 # D1 数据库的名称和 ID 可以在 cloudflare 控制台查看
 [[d1_databases]]
